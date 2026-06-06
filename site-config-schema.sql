@@ -38,10 +38,10 @@ CREATE TRIGGER update_site_config_updated_at
 INSERT INTO public.site_config (config_key, config_value, description, category) VALUES
 -- Book Information
 ('book_info', '{
-  "title": "Your Book Title: Subtitle Here",
+  "title": "Language of Freedom",
   "author": "Samly Maat",
   "genre": "Memoir • Biography • History",
-  "description": "Update this description for your new book in The Becoming Series. Most visitors see this text from the admin panel or after you edit this seed SQL.",
+  "description": "In a new country where every word feels unfamiliar, a young refugee girl begins the journey of learning not only a new language, but how to speak for herself.\n\nIn Language of Freedom, Samly Maat shares her early years in America as she struggles to understand English, navigate two cultures, and find her place in a world that often feels overwhelming. From classrooms she could not yet follow to quiet moments of doubt, courage, and discovery, she reveals what it means to find your voice after being taught to remain silent.\n\nCaught between the expectations of her Lao upbringing and the freedom she begins to see around her, she must learn how to honor her family while discovering who she is becoming.\n\nMore than a story of immigration, Language of Freedom is a story of identity, belonging, resilience, and the courage to become. It is a reminder that even in life''s hardest moments, the strength to rise and the light that guides us forward have always been within us.",
   "releaseDate": "TBD",
   "formats": ["Hardcover", "Paperback", "eBook"],
   "preorderBonus": "Preorder now and get a signed copy while supplies last!",
@@ -151,6 +151,12 @@ INSERT INTO public.site_config (config_key, config_value, description, category)
   "Exclusive author updates and behind-the-scenes content", 
   "Free shipping on all preorders"
 ]', 'Benefits for preordering the book', 'preorder'),
+
+-- Preorder Status (banner / sold-out message)
+('preorder_status', '{
+  "status": "Open",
+  "message": "Preorder now for early access and a signed copy while supplies last!"
+}', 'Preorder window status and message', 'preorder'),
 
 -- Site Configuration
 ('site_config', '{

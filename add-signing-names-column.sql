@@ -5,8 +5,9 @@ ALTER TABLE orders ADD COLUMN IF NOT EXISTS signing_names TEXT[];
 -- Add an index for queries filtering by signing names
 CREATE INDEX IF NOT EXISTS idx_orders_signing_names ON orders USING GIN(signing_names);
 
--- Update the completed_orders view to include signing names
-CREATE OR REPLACE VIEW completed_orders AS
+-- DROP required: CREATE OR REPLACE cannot insert columns before existing ones
+DROP VIEW IF EXISTS completed_orders;
+CREATE VIEW completed_orders AS
 SELECT 
     id,
     email,
@@ -35,8 +36,8 @@ FROM orders
 WHERE status = 'completed'
 ORDER BY payment_completed_at DESC;
 
--- Update the orders_to_ship view to include signing names
-CREATE OR REPLACE VIEW orders_to_ship AS
+DROP VIEW IF EXISTS orders_to_ship;
+CREATE VIEW orders_to_ship AS
 SELECT 
     id,
     email,

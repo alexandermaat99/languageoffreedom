@@ -19,15 +19,24 @@ export async function getSiteConfig<T = any>(key: string): Promise<T | null> {
 
     // Fetch from database
     const supabase = createClient();
-    const { data, error } = await supabase
+    const { data: rows, error } = await supabase
       .from('site_config')
       .select('config_value')
       .eq('config_key', key)
       .eq('is_active', true)
-      .single();
+      .limit(1);
 
-    if (error || !data) {
-      console.error(`Failed to fetch config for key: ${key}`, error);
+    if (error?.code || error?.message) {
+      console.error(
+        `Failed to fetch config for key: ${key}`,
+        error.message ?? error.code,
+        error,
+      );
+      return null;
+    }
+
+    const data = rows?.[0];
+    if (!data) {
       return null;
     }
 
