@@ -7,6 +7,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Switch } from '@/components/ui/switch';
+
+const SOCIAL_PLATFORMS = [
+  { key: 'instagram', label: 'Instagram' },
+  { key: 'facebook', label: 'Facebook' },
+  { key: 'linkedin', label: 'LinkedIn' },
+] as const;
 
 interface SiteConfig {
   id: string;
@@ -167,6 +174,25 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                 onChange={(e) => setFormData({...formData, preorderBonus: e.target.value})}
                 placeholder="e.g., Preorder now and get a signed copy!"
               />
+            </div>
+            <div className="rounded-lg border border-gray-200 p-4">
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <Label htmlFor="bonusMaterialEnabled" className="font-medium">
+                    Show bonus material
+                  </Label>
+                  <p className="text-sm text-gray-500 mt-1">
+                    Displays the bonus badge on the book cover and enables the bonuses page.
+                  </p>
+                </div>
+                <Switch
+                  id="bonusMaterialEnabled"
+                  checked={formData.bonusMaterialEnabled !== false}
+                  onCheckedChange={(checked) =>
+                    setFormData({ ...formData, bonusMaterialEnabled: checked })
+                  }
+                />
+              </div>
             </div>
             <div>
               <Label htmlFor="series">Series</Label>
@@ -700,43 +726,50 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
             </div>
             <div>
               <Label>Social Links</Label>
-              <div className="grid grid-cols-3 gap-3">
-                <div>
-                  <Label htmlFor="instagram">Instagram</Label>
-                  <Input
-                    id="instagram"
-                    value={formData.socialLinks?.instagram || ''}
-                    onChange={(e) => setFormData({
-                      ...formData, 
-                      socialLinks: {...formData.socialLinks, instagram: e.target.value}
-                    })}
-                    placeholder="Instagram URL"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="facebook">Facebook</Label>
-                  <Input
-                    id="facebook"
-                    value={formData.socialLinks?.facebook || ''}
-                    onChange={(e) => setFormData({
-                      ...formData, 
-                      socialLinks: {...formData.socialLinks, facebook: e.target.value}
-                    })}
-                    placeholder="Facebook URL"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="linkedin">LinkedIn</Label>
-                  <Input
-                    id="linkedin"
-                    value={formData.socialLinks?.linkedin || ''}
-                    onChange={(e) => setFormData({
-                      ...formData, 
-                      socialLinks: {...formData.socialLinks, linkedin: e.target.value}
-                    })}
-                    placeholder="LinkedIn URL"
-                  />
-                </div>
+              <p className="text-sm text-gray-500 mb-3">
+                Turn off a platform to hide it from the footer until you have an account.
+              </p>
+              <div className="space-y-4">
+                {SOCIAL_PLATFORMS.map(({ key, label }) => {
+                  const enabled = formData.socialLinksEnabled?.[key] !== false;
+                  return (
+                    <div key={key} className="rounded-lg border border-gray-200 p-4 space-y-3">
+                      <div className="flex items-center justify-between gap-4">
+                        <Label htmlFor={`${key}-enabled`} className="font-medium">
+                          Show {label} in footer
+                        </Label>
+                        <Switch
+                          id={`${key}-enabled`}
+                          checked={enabled}
+                          onCheckedChange={(checked) =>
+                            setFormData({
+                              ...formData,
+                              socialLinksEnabled: {
+                                ...formData.socialLinksEnabled,
+                                [key]: checked,
+                              },
+                            })
+                          }
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor={key}>{label} URL</Label>
+                        <Input
+                          id={key}
+                          value={formData.socialLinks?.[key] || ''}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              socialLinks: { ...formData.socialLinks, [key]: e.target.value },
+                            })
+                          }
+                          placeholder={`${label} URL`}
+                          disabled={!enabled}
+                        />
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>

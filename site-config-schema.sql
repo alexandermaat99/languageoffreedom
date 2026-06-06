@@ -48,7 +48,8 @@ INSERT INTO public.site_config (config_key, config_value, description, category)
   "series": "The Becoming Series — Book 3",
   "previousBook": "Waiting to Fly: A Laotian Refugee Girl''s Journey in Nong Khai",
   "previousBookUrl": "https://a.co/d/0hv9Ml4D",
-  "coverImage": "/images/bookImage.png"
+  "coverImage": "/images/bookImage.png",
+  "bonusMaterialEnabled": true
 }', 'Main book information and details', 'book'),
 
 -- Book Formats and Pricing
@@ -166,6 +167,11 @@ INSERT INTO public.site_config (config_key, config_value, description, category)
     "instagram": "#", 
     "facebook": "#",
     "linkedin": "#"
+  },
+  "socialLinksEnabled": {
+    "instagram": true,
+    "facebook": true,
+    "linkedin": true
   }
 }', 'General site configuration', 'site'),
 

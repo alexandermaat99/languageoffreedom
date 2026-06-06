@@ -7,9 +7,11 @@ import { Card } from "@/components/ui/card";
 import Link from "next/link";
 import Image from "next/image";
 import { BOOK_SHORT_TITLE } from "@/lib/site-brand";
+import { getBookInfo } from "@/lib/site-config-client";
 
 export default function BonusesPage() {
   const router = useRouter();
+  const [isAvailable, setIsAvailable] = useState<boolean | null>(null);
 
   const downloadableFile = {
     name: "bonusDownload.pdf",
@@ -60,6 +62,24 @@ export default function BonusesPage() {
     }
   };
 
+  useEffect(() => {
+    const checkAvailability = async () => {
+      try {
+        const bookInfo = await getBookInfo();
+        if (bookInfo?.bonusMaterialEnabled === false) {
+          router.replace("/");
+          return;
+        }
+        setIsAvailable(true);
+      } catch (error) {
+        console.error("Error checking bonus material availability:", error);
+        setIsAvailable(true);
+      }
+    };
+
+    checkAvailability();
+  }, [router]);
+
   // Close modal on ESC key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -79,6 +99,14 @@ export default function BonusesPage() {
     };
   }, [selectedPhoto]);
 
+
+  if (isAvailable === null) {
+    return (
+      <main className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+      </main>
+    );
+  }
 
   return (
     <main className="min-h-screen bg-gray-50">

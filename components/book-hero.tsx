@@ -68,10 +68,11 @@ export function BookHero() {
               className="w-full max-w-full h-auto object-contain"
               priority
             />
-              {/* Red Star Badge */}
-              <div className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 z-10">
-                <BonusStar />
-              </div>
+              {bookInfo.bonusMaterialEnabled !== false && (
+                <div className="absolute top-4 right-4 sm:top-6 sm:right-6 md:top-8 md:right-8 z-10">
+                  <BonusStar />
+                </div>
+              )}
             </div>
           ) : (
             <Card className="w-full max-w-80 h-96 bg-gradient-to-br from-blue-50 to-indigo-100 border-2 border-dashed border-gray-300 flex items-center justify-center">

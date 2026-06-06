@@ -127,15 +127,21 @@ export default function Home() {
                   </Link>
                 </div>
                 <div className="flex space-x-4">
-                  <a href={siteConfig?.socialLinks?.instagram || '#'} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Instagram">
-                    <FaInstagram size={24} />
-                  </a>
-                  <a href={siteConfig?.socialLinks?.facebook || '#'} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Facebook">
-                    <FaFacebook size={24} />
-                  </a>
-                  <a href={siteConfig?.socialLinks?.linkedin || '#'} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="LinkedIn">
-                    <FaLinkedin size={24} />
-                  </a>
+                  {siteConfig?.socialLinksEnabled?.instagram !== false && (
+                    <a href={siteConfig?.socialLinks?.instagram || '#'} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Instagram">
+                      <FaInstagram size={24} />
+                    </a>
+                  )}
+                  {siteConfig?.socialLinksEnabled?.facebook !== false && (
+                    <a href={siteConfig?.socialLinks?.facebook || '#'} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="Facebook">
+                      <FaFacebook size={24} />
+                    </a>
+                  )}
+                  {siteConfig?.socialLinksEnabled?.linkedin !== false && (
+                    <a href={siteConfig?.socialLinks?.linkedin || '#'} target="_blank" rel="noopener noreferrer" className="text-gray-400 hover:text-white transition-colors duration-200" aria-label="LinkedIn">
+                      <FaLinkedin size={24} />
+                    </a>
+                  )}
                 </div>
               </div>
             </div>
