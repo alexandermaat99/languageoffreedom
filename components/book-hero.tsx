@@ -112,7 +112,7 @@ export function BookHero() {
           </div>
 
           <div className="space-y-4 min-w-0">
-            <p className="text-base sm:text-lg text-gray-700 leading-relaxed break-words">
+            <p className="text-base sm:text-lg text-gray-700 leading-relaxed break-words whitespace-pre-line">
               {bookInfo.description}
             </p>
             
