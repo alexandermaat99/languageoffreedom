@@ -16,27 +16,23 @@ export function Foreword() {
 
           <div className="prose prose-lg max-w-none">
             <p className="text-lg text-gray-700 leading-relaxed mb-6">
-              I first met <strong>Samly Maat</strong> at my 10-10-10 program. From the moment she spoke, I felt her fire: calm, focused, and unstoppable. She wasn&apos;t just writing a book; she was claiming her freedom. I knew then that when she spoke of rising, she spoke from truth, not imagination.
-            </p>
-            
-            <p className="text-lg text-gray-700 leading-relaxed mb-6">
-              <strong>{BOOK_SHORT_TITLE}</strong> is more than a memoir. It is a mirror that reflects courage and endurance. Each page carries the heartbeat of a girl who refused to be broken and the woman who rose beyond fear to light the way for others.
+              I first met <strong>Samly Maat</strong> at my 10-10-10 program, and from the moment she spoke, I felt the quiet strength in her voice. It was steady, grounded, and unmistakably true. She was not simply writing a book. She was learning how to claim her voice. That same spirit lives in every page of <strong>{BOOK_SHORT_TITLE}</strong>.
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-6">
-              I have guided many authors, but few carry this rare mix of honesty and grace. Samly writes with quiet power that draws you in. She does not tell you what to believe; she shows you how belief is born.
+              This third memoir marks a powerful and deeply human turning point in Samly&apos;s journey. If her earlier books revealed the trauma of survival and the ache of displacement, this one shows the slow and courageous work of belonging. Here, you meet a young refugee girl navigating America without the language to explain herself, without the cultural map to guide her, and often without safety even at home. Through school hallways, family conflict, and quiet moments of fear, she begins to discover something essential. Her voice matters.
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-6">
-              This book will move you. It will remind you that freedom is not given; it is chosen, earned, and lived.
+              Samly writes with rare honesty and restraint. She does not soften the pain of being misunderstood, silenced, or forced to grow up too soon. Yet she also shows you how kindness, education, and faith can become lifelines. This book reveals how language becomes more than words. It becomes freedom. Freedom to speak. Freedom to choose. Freedom to imagine a future beyond survival.
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-6">
-              Samly&apos;s journey does not end here. <strong>{BOOK_SHORT_TITLE}</strong> is one chapter in a larger story, a rise from silence to strength, from survival to leadership. Every word carries the same truth: no matter where you begin, you can always rise higher.
+              I have worked with many authors, but few write with Samly&apos;s clarity, humility, and emotional truth. She does not ask for sympathy. She invites understanding. And in doing so, she reminds you that resilience is not loud. It is built quietly, one brave moment at a time.
             </p>
 
             <p className="text-lg text-gray-700 leading-relaxed mb-8">
-              I am proud to introduce <strong>{BOOK_SHORT_TITLE}</strong>. Let this story lift you.
+              May <strong>{BOOK_SHORT_TITLE}</strong> remind you that belonging is learned, courage is practiced, and your voice, no matter how fragile it may be now, can grow strong enough to change your life.
             </p>
 
             <div className="text-right border-t border-gray-200 pt-6">
