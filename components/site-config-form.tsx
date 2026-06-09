@@ -77,7 +77,17 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
         setFormData(converted.length > 0 ? converted : []);
       }
     } else {
-      setFormData(config.config_value || {});
+      const value = config.config_value || {};
+      if (config.config_key === 'book_info') {
+        const previousBooks = Array.isArray(value.previousBooks) && value.previousBooks.length > 0
+          ? value.previousBooks
+          : value.previousBook
+            ? [{ title: value.previousBook, url: value.previousBookUrl || '' }]
+            : [];
+        setFormData({ ...value, previousBooks });
+      } else {
+        setFormData(value);
+      }
     }
   }, [config]);
 
@@ -94,8 +104,13 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
       } else if (config.config_key === 'preorder_discount') {
         dataToSave = normalizePreorderDiscount(formData);
       } else if (config.config_key === 'book_info') {
-        const { formats: _legacyFormats, ...bookInfo } = formData;
-        dataToSave = bookInfo;
+        const { formats: _legacyFormats, previousBook: _legacyPreviousBook, previousBookUrl: _legacyPreviousBookUrl, ...bookInfo } = formData;
+        dataToSave = {
+          ...bookInfo,
+          previousBooks: Array.isArray(bookInfo.previousBooks)
+            ? bookInfo.previousBooks.filter((book: { title?: string }) => book?.title?.trim())
+            : [],
+        };
       } else {
         dataToSave = formData;
       }
@@ -197,34 +212,69 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
               />
             </div>
             <div className="border-t pt-4">
-              <h3 className="text-lg font-medium mb-3">Previous Book Information</h3>
+              <h3 className="text-lg font-medium mb-3">Previous Books in the Series</h3>
+              <p className="text-sm text-gray-500 mb-3">
+                Shown on the homepage as Book 1, Book 2, and so on.
+              </p>
               <div className="space-y-3">
-                <div>
-                  <Label htmlFor="previousBook">Previous Book Title</Label>
-                  <Input
-                    id="previousBook"
-                    value={formData.previousBook || ''}
-                    onChange={(e) => setFormData({...formData, previousBook: e.target.value})}
-                    placeholder="e.g., Before I Became a Refugee Girl: Life in Laos During the Vietnam War Era"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="previousBookUrl">Previous Book URL</Label>
-                  <Input
-                    id="previousBookUrl"
-                    value={formData.previousBookUrl || ''}
-                    onChange={(e) => setFormData({...formData, previousBookUrl: e.target.value})}
-                    placeholder="https://a.co/d/623YZo9"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Full URL to the previous book (e.g., Amazon link)
-                  </p>
-                </div>
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
-                  <p className="text-xs text-blue-800">
-                    <strong>Note:</strong> To edit the previous book year (e.g., 2020), go to <strong>Author Info</strong> configuration and edit the "Previous Works" section.
-                  </p>
-                </div>
+                {(Array.isArray(formData.previousBooks) ? formData.previousBooks : []).map((book: any, index: number) => (
+                  <Card key={index} className="p-4">
+                    <div className="space-y-3">
+                      <p className="text-sm font-medium text-gray-700">Book {index + 1}</p>
+                      <div>
+                        <Label>Title</Label>
+                        <Input
+                          value={book.title || ''}
+                          onChange={(e) => {
+                            const books = Array.isArray(formData.previousBooks) ? [...formData.previousBooks] : [];
+                            books[index] = { ...book, title: e.target.value };
+                            setFormData({ ...formData, previousBooks: books });
+                          }}
+                          placeholder="Book title"
+                        />
+                      </div>
+                      <div>
+                        <Label>URL</Label>
+                        <Input
+                          value={book.url || ''}
+                          onChange={(e) => {
+                            const books = Array.isArray(formData.previousBooks) ? [...formData.previousBooks] : [];
+                            books[index] = { ...book, url: e.target.value };
+                            setFormData({ ...formData, previousBooks: books });
+                          }}
+                          placeholder="https://a.co/d/623YZo9"
+                        />
+                      </div>
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                          const books = Array.isArray(formData.previousBooks) ? [...formData.previousBooks] : [];
+                          setFormData({
+                            ...formData,
+                            previousBooks: books.filter((_: any, i: number) => i !== index),
+                          });
+                        }}
+                      >
+                        Remove
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    const books = Array.isArray(formData.previousBooks) ? formData.previousBooks : [];
+                    setFormData({
+                      ...formData,
+                      previousBooks: [...books, { title: '', url: '' }],
+                    });
+                  }}
+                >
+                  Add Book
+                </Button>
               </div>
             </div>
             <div className="border-t pt-4">

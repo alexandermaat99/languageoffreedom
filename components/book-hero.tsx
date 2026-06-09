@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { getBookInfo, getBookFormats, getPreorderStatus } from "@/lib/site-config-client";
+import { getPreviousBooks } from "@/lib/book-info";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -60,6 +61,8 @@ export function BookHero() {
     );
   }
 
+  const previousBooks = getPreviousBooks(bookInfo);
+
   return (
     <section id="about" className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-16 overflow-x-hidden">
       <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 items-center">
@@ -107,15 +110,34 @@ export function BookHero() {
             <div className="flex items-center gap-2 text-sm text-gray-500 mb-4 flex-wrap">
               <span className="break-words">{bookInfo.genre}</span>
             </div>
-            <Link 
-              href={bookInfo.previousBookUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="block text-sm text-gray-600 bg-gray-50 p-3 rounded-lg hover:bg-gray-100 transition-colors duration-200 break-words"
-            >
-              <p className="font-medium mb-1">Previous book in the series:</p>
-              <p className="italic break-words">&ldquo;{bookInfo.previousBook}&rdquo;</p>
-            </Link>
+            {previousBooks.length > 0 && (
+              <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-lg break-words">
+                <p className="font-medium mb-2">Previous books in the series:</p>
+                <div className="space-y-2">
+                  {previousBooks.map((book, index) => (
+                    book.url ? (
+                      <Link
+                        key={index}
+                        href={book.url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="block hover:text-green-700 transition-colors duration-200"
+                      >
+                        <p className="break-words">
+                          <span className="font-medium">Book {index + 1}:</span>{' '}
+                          <span className="italic">&ldquo;{book.title}&rdquo;</span>
+                        </p>
+                      </Link>
+                    ) : (
+                      <p key={index} className="break-words">
+                        <span className="font-medium">Book {index + 1}:</span>{' '}
+                        <span className="italic">&ldquo;{book.title}&rdquo;</span>
+                      </p>
+                    )
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-4 min-w-0">

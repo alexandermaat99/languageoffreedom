@@ -45,9 +45,17 @@ INSERT INTO public.site_config (config_key, config_value, description, category)
   "releaseDate": "TBD",
   "formats": ["Hardcover", "Paperback", "eBook"],
   "preorderBonus": "Preorder now and get a signed copy while supplies last!",
-  "series": "The Becoming Series — Book 3",
-  "previousBook": "Waiting to Fly: A Laotian Refugee Girl''s Journey in Nong Khai",
-  "previousBookUrl": "https://a.co/d/0hv9Ml4D",
+  "series": "The Light From Within Memoir Series - Book 3",
+  "previousBooks": [
+    {
+      "title": "Before I Became a Refugee Girl: Life in Laos During the Vietnam War Era",
+      "url": "https://a.co/d/075qRbIz"
+    },
+    {
+      "title": "Waiting to Fly: A Laotian Refugee Girl''s Journey in Nong Khai",
+      "url": "https://a.co/d/0hv9Ml4D"
+    }
+  ],
   "coverImage": "/images/bookImage.png",
   "bonusMaterialEnabled": true
 }', 'Main book information and details', 'book'),

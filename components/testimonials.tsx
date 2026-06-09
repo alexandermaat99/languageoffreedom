@@ -2,6 +2,7 @@
 
 import { Card } from "@/components/ui/card";
 import { getTestimonials, getBookInfo } from "@/lib/site-config-client";
+import { getPreviousBooks } from "@/lib/book-info";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -79,6 +80,9 @@ export function Testimonials() {
     );
   }
 
+  const previousBooks = getPreviousBooks(bookInfo);
+  const featuredPreviousBook = previousBooks[previousBooks.length - 1];
+
   return (
     <section className="w-full max-w-6xl mx-auto px-4 py-16">
       <div className="text-center mb-12">
@@ -87,8 +91,8 @@ export function Testimonials() {
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
         The following words are drawn from early reader responses to Samly Maat&apos;s previous memoir,{" "}
-        <Link href={bookInfo?.previousBookUrl || '#'} target="_blank" rel="noopener noreferrer" className="font-semibold italic hover:text-green-600 transition-colors duration-200">
-          {bookInfo?.previousBook || "the previous book in the series"}
+        <Link href={featuredPreviousBook?.url || '#'} target="_blank" rel="noopener noreferrer" className="font-semibold italic hover:text-green-600 transition-colors duration-200">
+          {featuredPreviousBook?.title || "the previous book in the series"}
         </Link>
         . They capture the spirit of courage, gratitude, and hope that continues in her next book,{" "}
         <span className="font-semibold italic">{bookInfo?.title || "this book"}</span>.
