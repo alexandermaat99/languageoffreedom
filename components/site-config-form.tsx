@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { Switch } from '@/components/ui/switch';
+import { normalizePreorderDiscount } from '@/lib/preorder-discount';
 
 const SOCIAL_PLATFORMS = [
   { key: 'instagram', label: 'Instagram' },
@@ -62,6 +63,11 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
     // Handle shipping_price which is a number, not an object
     if (config.config_key === 'shipping_price') {
       setFormData(config.config_value || 0);
+    } else if (config.config_key === 'preorder_discount') {
+      setFormData({
+        enabled: config.config_value?.enabled ?? true,
+        percent: config.config_value?.percent ?? 15,
+      });
     } else if (config.config_key === 'testimonials' || config.config_key === 'preorder_benefits') {
       // Ensure these are always arrays, converting from object if needed
       const value = config.config_value;
@@ -96,6 +102,8 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
       // Handle array types (testimonials, preorder_benefits)
       if (config.config_key === 'testimonials' || config.config_key === 'preorder_benefits') {
         dataToSave = Array.isArray(formData) ? formData : [];
+      } else if (config.config_key === 'preorder_discount') {
+        dataToSave = normalizePreorderDiscount(formData);
       } else if (config.config_key === 'book_info') {
         // Process formats string to array before saving
         dataToSave = { ...formData };
@@ -701,6 +709,58 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
             </div>
           </div>
         );
+
+      case 'preorder_discount': {
+        const discountEnabled = formData?.enabled ?? true;
+        const discountPercent = typeof formData?.percent === 'number' ? formData.percent : 15;
+
+        return (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between rounded-md border p-4">
+              <div>
+                <Label htmlFor="discount_enabled">Discount Enabled</Label>
+                <p className="text-sm text-gray-500 mt-1">
+                  When off, customers pay the full list price from Book Formats &amp; Pricing.
+                </p>
+              </div>
+              <Switch
+                id="discount_enabled"
+                checked={discountEnabled}
+                onCheckedChange={(checked) => setFormData({ ...formData, enabled: checked })}
+              />
+            </div>
+            <div>
+              <Label htmlFor="discount_percent">Discount Percentage</Label>
+              <Input
+                id="discount_percent"
+                type="number"
+                min="0"
+                max="100"
+                step="1"
+                value={discountPercent}
+                disabled={!discountEnabled}
+                onChange={(e) => {
+                  const value = Math.min(100, Math.max(0, parseInt(e.target.value, 10) || 0));
+                  setFormData({ ...formData, percent: value });
+                }}
+                placeholder="15"
+              />
+              <p className="text-sm text-gray-500 mt-2">
+                Percentage off the list price at checkout. Applies to all book formats.
+                Bundle prices are set in Book Formats &amp; Pricing; this percentage controls the savings shown and applied at checkout.
+              </p>
+            </div>
+            <div className="p-4 bg-blue-50 rounded-md">
+              <p className="text-sm text-blue-800">
+                <strong>Preview:</strong>{' '}
+                {discountEnabled
+                  ? `${discountPercent}% off list price at checkout`
+                  : 'No discount — full list price charged'}
+              </p>
+            </div>
+          </div>
+        );
+      }
 
       case 'site_config':
         return (

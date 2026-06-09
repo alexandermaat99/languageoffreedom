@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card } from "@/components/ui/card";
-import { getBookInfo, getPreorderBenefits, getBookFormats, getShippingPrice } from "@/lib/site-config-client";
+import { getBookInfo, getPreorderBenefits, getBookFormats, getShippingPrice, getPreorderDiscount } from "@/lib/site-config-client";
 import { calculateTax } from "@/lib/tax-config";
+import { calculatePreorderDiscount, normalizePreorderDiscount, type PreorderDiscountConfig, DEFAULT_PREORDER_DISCOUNT } from "@/lib/preorder-discount";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 import Link from "next/link";
@@ -101,6 +102,7 @@ function PaymentForm({
   const [bookFormats, setBookFormats] = useState<any>(null);
   const [preorderBenefits, setPreorderBenefits] = useState<any[]>([]);
   const [shippingPrice, setShippingPrice] = useState<number>(0);
+  const [discountConfig, setDiscountConfig] = useState<PreorderDiscountConfig>(DEFAULT_PREORDER_DISCOUNT);
 
   // Shipping information state
   const [shippingFirstName, setShippingFirstName] = useState(() => getStoredState('shippingFirstName', ''));
@@ -210,16 +212,18 @@ function PaymentForm({
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [bookData, formatsData, benefitsData, shipping] = await Promise.all([
+        const [bookData, formatsData, benefitsData, shipping, discountData] = await Promise.all([
           getBookInfo(),
           getBookFormats(),
           getPreorderBenefits(),
-          getShippingPrice()
+          getShippingPrice(),
+          getPreorderDiscount(),
         ]);
         setBookInfo(bookData);
         setBookFormats(formatsData);
         setPreorderBenefits(benefitsData || []);
         setShippingPrice(shipping || 0);
+        setDiscountConfig(normalizePreorderDiscount(discountData));
 
         // Set format from database when missing or invalid (any checkout step)
         if (formatsData && (!bookFormat || !formatsData[bookFormat])) {
@@ -313,26 +317,9 @@ function PaymentForm({
     }
   }, [bookFormats]); // Only depend on bookFormats, not bookFormat, to avoid loops
   
-  // Discount calculation function
-  const calculateDiscount = (basePrice: number, qty: number, format: string): { discountPercent: number; pricePerBook: number; totalSubtotal: number } => {
-    // Bundle option: Use the price from database (should be set to $22.48 in DB)
-    // Supports multiple bundles
-    if (format === 'bundle') {
-      const pricePerBundle = basePrice; // Use price from database
-      const discountPercent = 25; // 25% off bundle (assuming base price in DB accounts for this)
-      return { discountPercent, pricePerBook: pricePerBundle, totalSubtotal: pricePerBundle * qty };
-    }
-    
-    // All quantities – 15% off from base price
-    if (qty >= 1) {
-      const discountPercent = 15;
-      const pricePerBook = basePrice * (1 - discountPercent / 100); // Calculate 15% off from base price
-      return { discountPercent, pricePerBook, totalSubtotal: pricePerBook * qty };
-    }
-    
-    // Default: no discount (shouldn't happen with above logic)
-    return { discountPercent: 0, pricePerBook: basePrice, totalSubtotal: basePrice * qty };
-  };
+  // Discount calculation uses admin-configured settings
+  const calculateDiscount = (basePrice: number, qty: number, format: string) =>
+    calculatePreorderDiscount(basePrice, qty, format, discountConfig);
 
   // Tax calculation - Separate estimated tax (step 1) from actual tax (step 2)
   const [displaySubtotal, setDisplaySubtotal] = useState<number>(0);
@@ -349,26 +336,16 @@ function PaymentForm({
     if (!bookFormats || !bookFormat) return;
     
     const basePrice = bookFormats[bookFormat as keyof typeof bookFormats]?.price || 24.99;
-    const { discountPercent, pricePerBook, totalSubtotal } = calculateDiscount(basePrice, quantity, bookFormat);
+    const { totalSubtotal, discountAmount: calculatedDiscountAmount } = calculateDiscount(basePrice, quantity, bookFormat);
     
     setDisplaySubtotal(totalSubtotal);
-    // For bundle, calculate discount differently (bundle price in DB is already discounted)
-    // For other formats, discount is 15% off base price
-    if (bookFormat === 'bundle') {
-      // If bundle base price is $22.48 and represents 25% off, original would be ~$29.97
-      // For now, just show the difference from what would be 2 books at base price
-      // This assumes bundle price in DB is the discounted price already
-      const originalBundlePrice = basePrice / 0.75; // Reverse calculate from 25% discount
-      setDiscountAmount((originalBundlePrice * quantity) - totalSubtotal);
-    } else {
-      setDiscountAmount((basePrice * quantity) - totalSubtotal);
-    }
+    setDiscountAmount(calculatedDiscountAmount);
     
     // Calculate initial state-level estimate (only recalculates when format changes, not shipping)
     // User will see actual tax only after clicking "Continue to Payment"
     const { tax: taxEstimate } = calculateTax(totalSubtotal, shippingCountry, shippingState, isDigital);
     setEstimatedTax(taxEstimate);
-  }, [bookFormats, bookFormat, isDigital, quantity]); // Include quantity in dependencies
+  }, [bookFormats, bookFormat, isDigital, quantity, discountConfig, shippingCountry, shippingState]);
   
   // Note: Bundle and paperback both support quantity selection now
   
@@ -1090,17 +1067,19 @@ function PaymentForm({
                       required
                       className="w-full"
                     />
-                    {bookFormat !== 'bundle' && (
-                      <p className="text-xs text-gray-500 mt-1">✨ 15% off applies to all quantities</p>
+                    {bookFormat !== 'bundle' && discountConfig.enabled && discountConfig.percent > 0 && (
+                      <p className="text-xs text-gray-500 mt-1">✨ {discountConfig.percent}% off applies to all quantities</p>
                     )}
-                    {bookFormat === 'bundle' && (
-                      <p className="text-xs text-gray-500 mt-1">✨ 25% off bundle price - Each bundle includes Book 1 + Book 2</p>
+                    {bookFormat === 'bundle' && discountConfig.enabled && discountConfig.percent > 0 && (
+                      <p className="text-xs text-gray-500 mt-1">✨ {discountConfig.percent}% off bundle price - Each bundle includes Book 1 + Book 2</p>
                     )}
                   </div>
-                  {bookFormat === 'bundle' && (
+                  {bookFormat === 'bundle' && discountConfig.enabled && discountConfig.percent > 0 && (
                     <div className="p-3 bg-green-50 border border-green-200 rounded-md">
                       <p className="text-sm text-green-800 font-medium">✨ Bundle Special: Book 1 + Book 2</p>
-                      <p className="text-sm text-green-700 mt-1">Each bundle = $22.48 (25% off)</p>
+                      <p className="text-sm text-green-700 mt-1">
+                        Each bundle = ${bookFormats?.[bookFormat]?.price?.toFixed(2) ?? '—'} ({discountConfig.percent}% off)
+                      </p>
                     </div>
                   )}
                   
@@ -1526,7 +1505,7 @@ function PaymentForm({
                 {discountAmount > 0 && (
                   <div className="flex justify-between text-green-600">
                     <span>Discount ({
-                      bookFormat === 'bundle' ? '25% bundle' : '15%'
+                      bookFormat === 'bundle' ? `${discountConfig.percent}% bundle` : `${discountConfig.percent}%`
                     }):</span>
                     <span className="font-medium">-${discountAmount.toFixed(2)}</span>
                   </div>

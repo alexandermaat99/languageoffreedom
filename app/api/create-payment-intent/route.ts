@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe, formatAmountForStripe, formatAmountFromStripe, validateStripeKeyPair } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
-import { getBookFormats } from '@/lib/site-config';
+import { getBookFormats, getPreorderDiscount } from '@/lib/site-config';
 import { calculateTax } from '@/lib/tax-config';
+import { calculatePreorderDiscount, normalizePreorderDiscount } from '@/lib/preorder-discount';
 import { DEFAULT_BOOK_TITLE } from '@/lib/site-brand';
 
 export async function POST(request: NextRequest) {
@@ -119,8 +120,15 @@ export async function POST(request: NextRequest) {
     // Bundle is a physical product, not digital
     const isDigital = ['ebook', 'audiobook'].includes(bookFormat) && bookFormat !== 'bundle';
     
-    // Use subtotal from frontend (price before tax), or fallback to base price from database
-    const subtotalAmount = subtotal || bookFormats[bookFormat as keyof typeof bookFormats]?.price || bookFormats?.hardcover?.price || 24.99;
+    const discountConfig = normalizePreorderDiscount(await getPreorderDiscount());
+    const basePrice = bookFormats[bookFormat as keyof typeof bookFormats]?.price || 0;
+    const { totalSubtotal: calculatedSubtotal } = calculatePreorderDiscount(
+      basePrice,
+      quantity,
+      bookFormat,
+      discountConfig,
+    );
+    const subtotalAmount = calculatedSubtotal;
     
     // Get shipping cost (0 for digital products, actual shipping for physical)
     const shippingAmount = isDigital ? 0 : (shipping || 0);

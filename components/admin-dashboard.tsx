@@ -92,6 +92,7 @@ export function AdminDashboard() {
       preorder_benefits: 'Preorder Benefits',
       site_config: 'Footer Content',
       shipping_price: 'Shipping Price',
+      preorder_discount: 'Preorder Discount',
     };
     if (map[key]) return map[key];
     // Fallback: Title Case and replace underscores
@@ -275,6 +276,10 @@ export function AdminDashboard() {
                 const shippingValue = isShippingPrice && typeof config.config_value === 'number' 
                   ? config.config_value 
                   : null;
+                const isPreorderDiscount = config.config_key === 'preorder_discount';
+                const discountValue = isPreorderDiscount && config.config_value && typeof config.config_value === 'object'
+                  ? config.config_value as { enabled?: boolean; percent?: number }
+                  : null;
                 
                 return (
                   <Card key={config.id} className="p-4">
@@ -292,6 +297,14 @@ export function AdminDashboard() {
                           <p className="text-gray-700 text-sm mb-2">
                             <strong>Current value:</strong> ${shippingValue.toFixed(2)}
                             {shippingValue === 0 && <span className="text-green-600 ml-2">(Free Shipping)</span>}
+                          </p>
+                        )}
+                        {isPreorderDiscount && discountValue && (
+                          <p className="text-gray-700 text-sm mb-2">
+                            <strong>Current value:</strong>{' '}
+                            {discountValue.enabled
+                              ? `${discountValue.percent ?? 0}% off at checkout`
+                              : 'Disabled (full list price)'}
                           </p>
                         )}
                         <div className="text-xs text-gray-500">
