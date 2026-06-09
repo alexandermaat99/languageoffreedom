@@ -297,6 +297,7 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                 placeholder="Enter author biography"
                 rows={4}
               />
+              <p className="text-sm text-gray-500 mt-1">Line breaks are preserved on the site.</p>
             </div>
             <div>
               <Label htmlFor="personalNote">Personal Note</Label>
@@ -307,6 +308,9 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                 placeholder="Enter personal note"
                 rows={3}
               />
+              <p className="text-sm text-gray-500 mt-1">
+                Supports basic HTML (e.g. &lt;strong&gt;) and line breaks.
+              </p>
             </div>
             <div>
               <Label htmlFor="quote">Quote</Label>

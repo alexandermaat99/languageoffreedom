@@ -6,6 +6,10 @@ import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
+function formatHtmlWithNewlines(html: string): string {
+  return html.replace(/\r\n/g, "\n").replace(/\n/g, "<br />");
+}
+
 export function AboutAuthor() {
   const [authorInfo, setAuthorInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -84,18 +88,18 @@ export function AboutAuthor() {
           </div>
 
           <div className="space-y-4">
-            <p className="text-lg text-gray-700 leading-relaxed">
+            <p className="text-lg text-gray-700 leading-relaxed whitespace-pre-line">
               {authorInfo.bio}
             </p>
             
-            <p 
+            <div
               className="text-lg text-gray-700 leading-relaxed"
-              dangerouslySetInnerHTML={{ __html: authorInfo.personalNote }}
+              dangerouslySetInnerHTML={{ __html: formatHtmlWithNewlines(authorInfo.personalNote) }}
             />
           </div>
 
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-            <p className="text-green-800 font-medium italic">
+            <p className="text-green-800 font-medium italic whitespace-pre-line">
               &ldquo;{authorInfo.quote}&rdquo;
             </p>
             <p className="text-green-700 text-sm mt-2">— {authorInfo.name}</p>
