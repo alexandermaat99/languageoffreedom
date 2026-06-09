@@ -1,14 +1,11 @@
 "use client";
 
 import { Card } from "@/components/ui/card";
-import { getTestimonials, getBookInfo } from "@/lib/site-config-client";
-import { getPreviousBooks } from "@/lib/book-info";
-import Link from "next/link";
+import { getTestimonials } from "@/lib/site-config-client";
 import { useEffect, useState } from "react";
 
 export function Testimonials() {
   const [testimonials, setTestimonials] = useState<any[]>([]);
-  const [bookInfo, setBookInfo] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   // Helper function to convert object with numeric keys to array
@@ -34,10 +31,7 @@ export function Testimonials() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [testimonialsData, bookData] = await Promise.all([
-          getTestimonials(),
-          getBookInfo()
-        ]);
+        const testimonialsData = await getTestimonials();
         // Ensure testimonialsData is always an array, converting from object if needed
         let safeTestimonials: any[] = [];
         if (Array.isArray(testimonialsData)) {
@@ -47,7 +41,6 @@ export function Testimonials() {
           safeTestimonials = objectToArray(testimonialsData);
         }
         setTestimonials(safeTestimonials);
-        setBookInfo(bookData);
       } catch (error) {
         console.error('Error fetching testimonials data:', error);
         setTestimonials([]); // Set empty array on error
@@ -80,9 +73,6 @@ export function Testimonials() {
     );
   }
 
-  const previousBooks = getPreviousBooks(bookInfo);
-  const featuredPreviousBook = previousBooks[previousBooks.length - 1];
-
   return (
     <section className="w-full max-w-6xl mx-auto px-4 py-16">
       <div className="text-center mb-12">
@@ -90,12 +80,7 @@ export function Testimonials() {
           What Readers Are Saying
         </h2>
         <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-        The following words are drawn from early reader responses to Samly Maat&apos;s previous memoir,{" "}
-        <Link href={featuredPreviousBook?.url || '#'} target="_blank" rel="noopener noreferrer" className="font-semibold italic hover:text-green-600 transition-colors duration-200">
-          {featuredPreviousBook?.title || "the previous book in the series"}
-        </Link>
-        . They capture the spirit of courage, gratitude, and hope that continues in her next book,{" "}
-        <span className="font-semibold italic">{bookInfo?.title || "this book"}</span>.
+          The following reflections come from early readers of Language of Freedom. Their words speak to the courage, resilience, and hope found throughout this journey of finding a voice, a place to belong, and the courage to become.
         </p>
       </div>
 
@@ -106,7 +91,7 @@ export function Testimonials() {
               <div className="text-yellow-400 text-2xl">
                 ⭐⭐⭐⭐⭐
               </div>
-              <blockquote className="text-gray-700 italic leading-relaxed">
+              <blockquote className="text-gray-700 italic leading-relaxed whitespace-pre-line">
                 &ldquo;{testimonial.quote}&rdquo;
               </blockquote>
               <div className="border-t border-gray-100 pt-4">

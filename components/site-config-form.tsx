@@ -445,6 +445,7 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                       }}
                       rows={3}
                     />
+                    <p className="text-sm text-gray-500 mt-1">Line breaks are preserved on the site.</p>
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div>
