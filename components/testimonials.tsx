@@ -84,9 +84,9 @@ export function Testimonials() {
         </p>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-8">
+      <div className="flex flex-wrap justify-center gap-8 items-start">
         {Array.isArray(testimonials) && testimonials.map((testimonial, index) => (
-          <Card key={index} className="p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
+          <Card key={index} className="h-fit w-full max-w-sm p-6 bg-white border border-gray-200 hover:shadow-lg transition-shadow">
             <div className="space-y-4">
               <div className="text-yellow-400 text-2xl">
                 ⭐⭐⭐⭐⭐
