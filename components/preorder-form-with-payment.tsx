@@ -38,12 +38,33 @@ function validateStripeClientMode(serverMode?: string) {
   }
 }
 
+type CheckoutStep = 'order' | 'signing' | 'shipping' | 'payment';
+
 interface PaymentFormInternalProps {
   clientSecret: string | null;
   setClientSecret: (secret: string | null) => void;
+  checkoutStep: CheckoutStep;
+  setCheckoutStep: (step: CheckoutStep) => void;
+  actualTax: number | null;
+  setActualTax: (tax: number | null) => void;
+  stripeTax: number | null;
+  setStripeTax: (tax: number | null) => void;
+  stripeSubtotal: number | null;
+  setStripeSubtotal: (subtotal: number | null) => void;
 }
 
-function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps) {
+function PaymentForm({
+  clientSecret,
+  setClientSecret,
+  checkoutStep,
+  setCheckoutStep,
+  actualTax,
+  setActualTax,
+  stripeTax,
+  setStripeTax,
+  stripeSubtotal,
+  setStripeSubtotal,
+}: PaymentFormInternalProps) {
   const searchParams = useSearchParams();
   
   // Restore form state from localStorage if available
@@ -72,7 +93,6 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [checkoutStep, setCheckoutStep] = useState<'order' | 'signing' | 'shipping' | 'payment'>('order');
   const [fieldErrors, setFieldErrors] = useState<Record<string, boolean>>({});
 
   // Data from database
@@ -302,11 +322,6 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
   const [displaySubtotal, setDisplaySubtotal] = useState<number>(24.99);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [estimatedTax, setEstimatedTax] = useState<number>(0); // State-level estimate for step 1
-  const [actualTax, setActualTax] = useState<number | null>(null); // Actual ZIP-based tax from Stripe (step 2)
-  
-  // Stripe Tax values (set after payment intent creation)
-  const [stripeTax, setStripeTax] = useState<number | null>(null);
-  const [stripeSubtotal, setStripeSubtotal] = useState<number | null>(null);
   
   // Calculate ESTIMATED tax (state-level) ONLY when book format changes
   // Tax does NOT update when shipping address changes - only when "Continue" is clicked
@@ -907,6 +922,12 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
               
               try {
                 if (checkoutStep === 'order') {
+                  handleContinueToSigning(e).catch(err => {
+                    console.error('Error in handleContinueToSigning:', err);
+                    setError(err instanceof Error ? err.message : 'An error occurred');
+                    setIsProcessing(false);
+                  });
+                } else if (checkoutStep === 'signing') {
                   handleContinueToShipping(e).catch(err => {
                     console.error('Error in handleContinueToShipping:', err);
                     setError(err instanceof Error ? err.message : 'An error occurred');
@@ -1545,6 +1566,10 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 
 function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
+  const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('order');
+  const [actualTax, setActualTax] = useState<number | null>(null);
+  const [stripeTax, setStripeTax] = useState<number | null>(null);
+  const [stripeSubtotal, setStripeSubtotal] = useState<number | null>(null);
 
   if (!stripePromise) {
     return (
@@ -1572,6 +1597,14 @@ function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
       <PaymentForm 
         clientSecret={clientSecret} 
         setClientSecret={setClientSecret}
+        checkoutStep={checkoutStep}
+        setCheckoutStep={setCheckoutStep}
+        actualTax={actualTax}
+        setActualTax={setActualTax}
+        stripeTax={stripeTax}
+        setStripeTax={setStripeTax}
+        stripeSubtotal={stripeSubtotal}
+        setStripeSubtotal={setStripeSubtotal}
       />
     </Elements>
   );
