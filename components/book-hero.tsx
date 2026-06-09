@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { getBookInfo, getPreorderStatus } from "@/lib/site-config-client";
+import { getBookInfo, getBookFormats, getPreorderStatus } from "@/lib/site-config-client";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -10,17 +10,24 @@ import { BonusStar } from "@/components/bonus-star";
 
 export function BookHero() {
   const [bookInfo, setBookInfo] = useState<any>(null);
+  const [availableFormats, setAvailableFormats] = useState<string[]>([]);
   const [preorderStatus, setPreorderStatus] = useState<{ status: string; message: string } | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchBookInfo = async () => {
       try {
-        const [data, status] = await Promise.all([
+        const [data, formats, status] = await Promise.all([
           getBookInfo(),
+          getBookFormats(),
           getPreorderStatus()
         ]);
         setBookInfo(data);
+        setAvailableFormats(
+          formats && typeof formats === 'object'
+            ? Object.values(formats).map((format: any) => format?.name).filter(Boolean)
+            : []
+        );
         setPreorderStatus(status);
       } catch (error) {
         console.error('Error fetching book info:', error);
@@ -163,7 +170,9 @@ export function BookHero() {
 
           <div className="text-sm text-gray-500 break-words">
             <p>Expected Release: {bookInfo.releaseDate}</p>
-            <p>Available in: {bookInfo.formats.join(", ")}</p>
+            {availableFormats.length > 0 && (
+              <p>Available in: {availableFormats.join(", ")}</p>
+            )}
           </div>
         </div>
       </div>

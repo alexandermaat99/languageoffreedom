@@ -37,8 +37,6 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
   const [formData, setFormData] = useState<any>({});
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [formatsInput, setFormatsInput] = useState<string>('');
-
   // Helper function to convert object with numeric keys to array
   const objectToArray = (obj: any): any[] => {
     if (Array.isArray(obj)) {
@@ -80,15 +78,6 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
       }
     } else {
       setFormData(config.config_value || {});
-      // Initialize formats input string
-      if (config.config_key === 'book_info') {
-        const formats = (config.config_value || {}).formats;
-        if (Array.isArray(formats)) {
-          setFormatsInput(formats.join(', '));
-        } else {
-          setFormatsInput('');
-        }
-      }
     }
   }, [config]);
 
@@ -105,12 +94,8 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
       } else if (config.config_key === 'preorder_discount') {
         dataToSave = normalizePreorderDiscount(formData);
       } else if (config.config_key === 'book_info') {
-        // Process formats string to array before saving
-        dataToSave = { ...formData };
-        if (formatsInput) {
-          const formatsArray = formatsInput.split(',').map((f: string) => f.trim()).filter((f: string) => f !== '');
-          dataToSave.formats = formatsArray;
-        }
+        const { formats: _legacyFormats, ...bookInfo } = formData;
+        dataToSave = bookInfo;
       } else {
         dataToSave = formData;
       }
@@ -254,21 +239,10 @@ export function SiteConfigForm({ config, onSave, onCancel }: SiteConfigFormProps
                     placeholder="e.g., /images/bookImage.png"
                   />
                 </div>
-                <div>
-                  <Label htmlFor="formats">Book Formats (comma-separated)</Label>
-                  <Input
-                    id="formats"
-                    value={formatsInput}
-                    onChange={(e) => setFormatsInput(e.target.value)}
-                    onBlur={() => {
-                      // Convert to array when user leaves the field
-                      const formatsArray = formatsInput.split(',').map((f: string) => f.trim()).filter((f: string) => f !== '');
-                      setFormData({...formData, formats: formatsArray});
-                    }}
-                    placeholder="e.g., Hardcover, Paperback, eBook"
-                  />
-                  <p className="text-xs text-gray-500 mt-1">
-                    Type formats separated by commas. You can include commas in format names.
+                <div className="rounded-md border border-gray-200 bg-gray-50 p-3">
+                  <p className="text-sm text-gray-600">
+                    Available formats shown on the site are managed in{' '}
+                    <strong>Book Formats &amp; Pricing</strong>.
                   </p>
                 </div>
               </div>
