@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { stripe, formatAmountForStripe, formatAmountFromStripe } from '@/lib/stripe';
+import { stripe, formatAmountForStripe, formatAmountFromStripe, validateStripeKeyPair } from '@/lib/stripe';
 import { createClient } from '@/lib/supabase/server';
 import { getBookFormats } from '@/lib/site-config';
 import { calculateTax } from '@/lib/tax-config';
@@ -7,6 +7,12 @@ import { DEFAULT_BOOK_TITLE } from '@/lib/site-brand';
 
 export async function POST(request: NextRequest) {
   try {
+    const stripeKeys = validateStripeKeyPair();
+    if (!stripeKeys.ok) {
+      console.error('Stripe configuration error:', stripeKeys.error);
+      return NextResponse.json({ error: stripeKeys.error }, { status: 500 });
+    }
+
     const body = await request.json();
     const { 
       email, 
@@ -493,6 +499,8 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
+      paymentIntentId: paymentIntent.id,
+      stripeMode: stripeKeys.mode,
       amount: finalTotal, // Return total with tax included
       subtotal: subtotalAmount,
       shipping: shippingAmount,

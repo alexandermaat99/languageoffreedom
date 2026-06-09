@@ -17,7 +17,26 @@ interface PreorderFormWithPaymentProps {
   onSuccess?: () => void;
 }
 
-const stripePromise = loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!);
+const stripePublishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY ?? '';
+const stripePromise = stripePublishableKey ? loadStripe(stripePublishableKey) : null;
+
+function getClientStripeMode(): 'test' | 'live' | null {
+  if (stripePublishableKey.startsWith('pk_test_')) return 'test';
+  if (stripePublishableKey.startsWith('pk_live_')) return 'live';
+  return null;
+}
+
+function validateStripeClientMode(serverMode?: string) {
+  const clientMode = getClientStripeMode();
+  if (!clientMode) {
+    throw new Error('Stripe publishable key is missing or invalid. Redeploy after setting NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY in Vercel.');
+  }
+  if (serverMode && clientMode !== serverMode) {
+    throw new Error(
+      `Stripe key mismatch: the site was built with ${clientMode} keys but the server is using ${serverMode} keys. Update Vercel env vars so both keys match, then redeploy.`,
+    );
+  }
+}
 
 interface PaymentFormInternalProps {
   clientSecret: string | null;
@@ -553,6 +572,8 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         throw new Error(data.error || 'Failed to create payment intent');
       }
 
+      validateStripeClientMode(data.stripeMode);
+
       console.log('Payment Intent created with Stripe Tax:', {
         subtotal: data.subtotal,
         tax: data.tax,
@@ -567,8 +588,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         setActualTax(data.tax);
       }
       
-      // Set clientSecret - this will cause Elements to remount with PaymentIntent
-      // Wallets will initialize with the correct amount from the PaymentIntent
+      // Set clientSecret - Elements remounts via key change below
       setClientSecret(data.clientSecret);
       
       // Move to payment step
@@ -688,8 +708,16 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
         });
 
         if (stripeError) {
-          // Set error state directly instead of throwing to avoid console errors
-          setError(stripeError.message || 'Payment failed. Please try again.');
+          const message = stripeError.message || 'Payment failed. Please try again.';
+          if (message.includes('No such payment_intent')) {
+            setClientSecret(null);
+            setCheckoutStep('details');
+            setError(
+              'Your payment session expired or Stripe keys are mismatched. Go back to shipping details and click Continue again. If this keeps happening, verify Vercel uses matching live Stripe keys and redeploy.',
+            );
+          } else {
+            setError(message);
+          }
           setIsProcessing(false);
           return;
         }
@@ -800,6 +828,8 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
       if (!response.ok || data.error) {
         throw new Error(data.error || 'Failed to create payment intent');
       }
+
+      validateStripeClientMode(data.stripeMode);
 
       console.log('Payment intent created, setting clientSecret');
       console.log('Stripe Tax calculated:', {
@@ -1516,11 +1546,17 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
 function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
 
-  // Keep Elements mounted with stable key - Stripe handles clientSecret updates via options
-  // This prevents PaymentForm from remounting and losing form state
+  if (!stripePromise) {
+    return (
+      <div className="rounded-md border border-red-200 bg-red-50 p-4 text-red-800">
+        Stripe is not configured. Set <code>NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY</code> in Vercel and redeploy.
+      </div>
+    );
+  }
+
   return (
     <Elements 
-      key="payment-elements" // Stable key - never changes
+      key={clientSecret ?? 'checkout-setup'}
       stripe={stripePromise} 
       options={
         clientSecret 
