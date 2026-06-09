@@ -711,7 +711,7 @@ function PaymentForm({ clientSecret, setClientSecret }: PaymentFormInternalProps
           const message = stripeError.message || 'Payment failed. Please try again.';
           if (message.includes('No such payment_intent')) {
             setClientSecret(null);
-            setCheckoutStep('details');
+            setCheckoutStep('shipping');
             setError(
               'Your payment session expired or Stripe keys are mismatched. Go back to shipping details and click Continue again. If this keeps happening, verify Vercel uses matching live Stripe keys and redeploy.',
             );
