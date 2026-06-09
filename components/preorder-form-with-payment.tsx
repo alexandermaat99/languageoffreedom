@@ -45,6 +45,8 @@ interface PaymentFormInternalProps {
   setClientSecret: (secret: string | null) => void;
   checkoutStep: CheckoutStep;
   setCheckoutStep: (step: CheckoutStep) => void;
+  bookFormat: string;
+  setBookFormat: (format: string) => void;
   actualTax: number | null;
   setActualTax: (tax: number | null) => void;
   stripeTax: number | null;
@@ -58,6 +60,8 @@ function PaymentForm({
   setClientSecret,
   checkoutStep,
   setCheckoutStep,
+  bookFormat,
+  setBookFormat,
   actualTax,
   setActualTax,
   stripeTax,
@@ -87,9 +91,6 @@ function PaymentForm({
 
   const [email, setEmail] = useState(() => getStoredState('email', ''));
   const [name, setName] = useState(() => getStoredState('name', ''));
-  // DO NOT restore bookFormat from localStorage - it might be invalid (e.g., "ebook")
-  // Let the useEffect validate and set it from database
-  const [bookFormat, setBookFormat] = useState<string>('');
 
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -220,9 +221,8 @@ function PaymentForm({
         setPreorderBenefits(benefitsData || []);
         setShippingPrice(shipping || 0);
 
-        // Only set format if we're in order or shipping step and don't have a valid format
-        // Don't reset format if we're already in payment step
-        if (formatsData && (checkoutStep === 'order' || checkoutStep === 'shipping') && (!bookFormat || !formatsData[bookFormat])) {
+        // Set format from database when missing or invalid (any checkout step)
+        if (formatsData && (!bookFormat || !formatsData[bookFormat])) {
           const availableFormats = Object.keys(formatsData);
           console.log('=== FORMAT INITIALIZATION ===');
           console.log('Available formats from database:', availableFormats);
@@ -251,24 +251,40 @@ function PaymentForm({
             if (typeof window !== 'undefined') {
               localStorage.setItem('checkout_bookFormat', JSON.stringify(urlFormat));
             }
+          } else if (typeof window !== 'undefined') {
+            const storedFormat = localStorage.getItem('checkout_bookFormat');
+            let parsedStoredFormat: string | null = null;
+            if (storedFormat) {
+              try {
+                parsedStoredFormat = JSON.parse(storedFormat);
+              } catch {
+                localStorage.removeItem('checkout_bookFormat');
+              }
+            }
+            if (parsedStoredFormat && formatsData[parsedStoredFormat]) {
+              console.log('Using format from checkout storage:', parsedStoredFormat);
+              setBookFormat(parsedStoredFormat);
+            } else {
+              const firstFormat = getFirstAvailableFormat(formatsData);
+              if (firstFormat) {
+                console.log('Setting format to first available:', firstFormat);
+                setBookFormat(firstFormat);
+                localStorage.setItem('checkout_bookFormat', JSON.stringify(firstFormat));
+              } else {
+                console.error('No available formats found in database!');
+                setBookFormat('');
+              }
+            }
           } else {
-            // Always use first available format from database - never trust any stored value
             const firstFormat = getFirstAvailableFormat(formatsData);
             if (firstFormat) {
-              console.log('Setting format to first available:', firstFormat);
-              console.log('This is the ONLY valid format we trust from the database');
               setBookFormat(firstFormat);
-              if (typeof window !== 'undefined') {
-                localStorage.setItem('checkout_bookFormat', JSON.stringify(firstFormat));
-              }
             } else {
-              console.error('No available formats found in database!');
               setBookFormat('');
             }
           }
-        } else if (formatsData && checkoutStep === 'payment' && bookFormat && formatsData[bookFormat]) {
-          // In payment step, just ensure format is valid - don't reset it
-          console.log('Payment step: preserving format:', bookFormat);
+        } else if (formatsData && bookFormat && formatsData[bookFormat]) {
+          console.log('Preserving format:', bookFormat);
         }
       } catch (error) {
         console.error('Error fetching payment form data:', error);
@@ -319,7 +335,7 @@ function PaymentForm({
   };
 
   // Tax calculation - Separate estimated tax (step 1) from actual tax (step 2)
-  const [displaySubtotal, setDisplaySubtotal] = useState<number>(24.99);
+  const [displaySubtotal, setDisplaySubtotal] = useState<number>(0);
   const [discountAmount, setDiscountAmount] = useState<number>(0);
   const [estimatedTax, setEstimatedTax] = useState<number>(0); // State-level estimate for step 1
   
@@ -360,12 +376,13 @@ function PaymentForm({
   // In step 1 and shipping: shows "calculated at checkout" text
   // In step 2: shows actual tax calculated by Stripe
   const hasCalculatedTax = checkoutStep === 'payment' && actualTax !== null;
-  const displayTax = hasCalculatedTax ? actualTax : 0; // Will show text instead of amount until calculated
+  const displayTax = hasCalculatedTax ? actualTax : 0;
+  const summarySubtotal = stripeSubtotal ?? displaySubtotal;
   // Only add shipping for physical products (not ebooks or audiobooks)
   const displayShipping = isDigital ? 0 : shippingPrice;
   const displayTotal = hasCalculatedTax 
-    ? displaySubtotal + displayTax + displayShipping 
-    : displaySubtotal + displayShipping; // Show subtotal + shipping until tax calculated
+    ? summarySubtotal + displayTax + displayShipping 
+    : summarySubtotal + displayShipping;
 
 
   // Helper function to clear field error when user starts typing
@@ -1492,7 +1509,9 @@ function PaymentForm({
           <div className="space-y-4">
             <div className="flex justify-between">
               <span className="text-gray-600">Book Format:</span>
-              <span className="font-medium">{bookFormats?.[bookFormat as keyof typeof bookFormats]?.name || 'Hardcover'}</span>
+              <span className="font-medium">
+                {bookFormats?.[bookFormat as keyof typeof bookFormats]?.name || (bookFormat || '—')}
+              </span>
             </div>
             
             <div className="flex justify-between">
@@ -1517,7 +1536,7 @@ function PaymentForm({
             
             <div className="flex justify-between">
               <span className="text-gray-600">Subtotal:</span>
-              <span className="font-medium">${displaySubtotal.toFixed(2)}</span>
+              <span className="font-medium">${summarySubtotal.toFixed(2)}</span>
             </div>
             
             <div className="flex justify-between">
@@ -1543,7 +1562,7 @@ function PaymentForm({
                 <span>
                   {hasCalculatedTax 
                     ? `$${displayTotal.toFixed(2)}`
-                    : `$${(displaySubtotal + displayShipping).toFixed(2)} + tax`
+                    : `$${(summarySubtotal + displayShipping).toFixed(2)} + tax`
                   }
                 </span>
               </div>
@@ -1567,6 +1586,7 @@ function PaymentForm({
 function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
   const [clientSecret, setClientSecret] = useState<string | null>(null);
   const [checkoutStep, setCheckoutStep] = useState<CheckoutStep>('order');
+  const [bookFormat, setBookFormat] = useState<string>('');
   const [actualTax, setActualTax] = useState<number | null>(null);
   const [stripeTax, setStripeTax] = useState<number | null>(null);
   const [stripeSubtotal, setStripeSubtotal] = useState<number | null>(null);
@@ -1599,6 +1619,8 @@ function PaymentFormWrapper({ onSuccess }: PreorderFormWithPaymentProps) {
         setClientSecret={setClientSecret}
         checkoutStep={checkoutStep}
         setCheckoutStep={setCheckoutStep}
+        bookFormat={bookFormat}
+        setBookFormat={setBookFormat}
         actualTax={actualTax}
         setActualTax={setActualTax}
         stripeTax={stripeTax}
