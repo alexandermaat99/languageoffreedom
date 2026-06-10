@@ -26,8 +26,13 @@ export default function BonusesPage() {
     },
     {
       id: 2,
-      url: "/images/photo2.jpg",
-      alt: "Family portrait of eight people standing by a pond with water lilies"
+      url: "/images/photo2.png",
+      alt: "Mountain Rise United Church of Christ in Fairport, New York, in winter"
+    },
+    {
+      id: 3,
+      url: "/images/photo3.jpg",
+      alt: "Jefferson High School bonus collage with yearbook, graduation photo, and school building from the early 1980s"
     },
   ];
 
@@ -146,11 +151,11 @@ export default function BonusesPage() {
             <div className="mb-6 flex justify-center">
               <div className="relative max-w-md w-full">
                 <Image
-                  src="/images/coverPreview.png"
+                  src="/images/coverPreview.png?v=2"
                   alt={`${BOOK_SHORT_TITLE} Companion Workbook Cover`}
                   width={600}
                   height={800}
-                  quality={90}
+                  unoptimized
                   className="w-full h-auto object-contain rounded-lg shadow-lg"
                   priority
                 />
@@ -185,7 +190,7 @@ export default function BonusesPage() {
                   className="relative group cursor-pointer"
                   onClick={() => setSelectedPhoto(photo)}
                 >
-                  <div className="relative overflow-hidden rounded-lg bg-gray-200 aspect-auto min-h-[300px]">
+                  <div className="relative overflow-hidden rounded-lg">
                     <Image
                       src={photo.url}
                       alt={photo.alt}
@@ -194,7 +199,7 @@ export default function BonusesPage() {
                       quality={85}
                       sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 50vw"
                       loading={index === 0 ? "eager" : "lazy"}
-                      className="w-full h-auto object-contain group-hover:scale-105 transition-transform duration-300"
+                      className="w-full h-auto rounded-lg group-hover:scale-105 transition-transform duration-300"
                     />
                   </div>
                 </div>
