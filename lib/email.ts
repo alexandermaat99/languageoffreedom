@@ -201,6 +201,11 @@ If you have any questions, please contact us at ${process.env.ADMIN_EMAIL || fro
       text,
     });
 
+    if (result.error) {
+      console.error('❌ Resend rejected order confirmation email:', result.error);
+      return { success: false, error: result.error.message };
+    }
+
     console.log('✅ Order confirmation email sent:', {
       email: data.to,
       orderId: data.orderId,
@@ -415,6 +420,11 @@ This is an automated notification from the ${SITE_DISPLAY_NAME} order system.
       html,
       text,
     });
+
+    if (result.error) {
+      console.error('❌ Resend rejected admin order notification email:', result.error);
+      return { success: false, error: result.error.message };
+    }
 
     console.log('✅ Admin order notification email sent:', {
       adminEmail,

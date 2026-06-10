@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { stripe } from '@/lib/stripe';
-import { createClient } from '@/lib/supabase/server';
+import { createServiceClient } from '@/lib/supabase/service';
 import { sendOrderConfirmationEmail, sendAdminOrderNotificationEmail } from '@/lib/email';
 import { DEFAULT_BOOK_TITLE } from '@/lib/site-brand';
 
@@ -29,7 +29,7 @@ export async function POST(request: NextRequest) {
           expand: ['line_items', 'total_details.breakdown'],
         });
         
-        const supabase = await createClient();
+        const supabase = createServiceClient();
         
         // Extract tax information from Stripe Tax
         // Note: total_details structure may vary, so we use type assertions
@@ -291,7 +291,7 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.succeeded': {
         const paymentIntent = event.data.object as any;
         
-        const supabase = await createClient();
+        const supabase = createServiceClient();
         
         // Retrieve the full PaymentIntent to get tax information
         // Stripe automatically creates a tax transaction when PaymentIntent succeeds with linked tax calculation
@@ -469,6 +469,78 @@ export async function POST(request: NextRequest) {
           }
         } else {
           console.error('❌ Cannot send emails - order data not available. Payment Intent ID:', paymentIntent.id);
+
+          // Fallback: send emails using PaymentIntent metadata (e.g. order insert failed at checkout)
+          const metadata = paymentIntent.metadata || {};
+          const customerEmail = metadata.email || paymentIntent.receipt_email;
+          const customerName = metadata.name || paymentIntent.shipping?.name || 'Customer';
+
+          if (customerEmail) {
+            console.log('⚠️ Attempting to send emails using PaymentIntent metadata to:', customerEmail);
+
+            const shipping = paymentIntent.shipping;
+            const shippingAddress = shipping?.address
+              ? {
+                  firstName: metadata.shippingFirstName || shipping.name?.split(' ')[0] || customerName.split(' ')[0] || '',
+                  lastName: metadata.shippingLastName || shipping.name?.split(' ').slice(1).join(' ') || customerName.split(' ').slice(1).join(' ') || '',
+                  addressLine1: shipping.address.line1 || metadata.shippingAddressLine1 || '',
+                  addressLine2: shipping.address.line2 || metadata.shippingAddressLine2 || undefined,
+                  city: shipping.address.city || metadata.shippingCity || '',
+                  state: shipping.address.state || metadata.shippingState || undefined,
+                  postalCode: shipping.address.postal_code || metadata.shippingPostalCode || '',
+                  country: shipping.address.country || metadata.shippingCountry || 'US',
+                }
+              : {
+                  firstName: metadata.shippingFirstName || customerName.split(' ')[0] || '',
+                  lastName: metadata.shippingLastName || customerName.split(' ').slice(1).join(' ') || '',
+                  addressLine1: metadata.shippingAddressLine1 || 'Address not available',
+                  addressLine2: metadata.shippingAddressLine2 || undefined,
+                  city: metadata.shippingCity || '',
+                  state: metadata.shippingState || undefined,
+                  postalCode: metadata.shippingPostalCode || '',
+                  country: metadata.shippingCountry || 'US',
+                };
+
+            const fallbackSubtotal = subtotalAmount || Math.max(0, totalAmount - taxAmount);
+            const orderEmailData = {
+              to: customerEmail,
+              customerName,
+              orderId: paymentIntent.id,
+              bookTitle: metadata.bookTitle || DEFAULT_BOOK_TITLE,
+              bookFormat: metadata.bookFormat || 'Unknown',
+              quantity: parseInt(metadata.quantity || '1', 10),
+              signingNames: null,
+              subtotal: fallbackSubtotal,
+              taxAmount,
+              shippingAmount: Math.max(0, totalAmount - fallbackSubtotal - taxAmount),
+              totalAmount,
+              shippingAddress,
+            };
+
+            try {
+              const customerEmailResult = await sendOrderConfirmationEmail(orderEmailData);
+              if (customerEmailResult.success) {
+                console.log('✅ Customer confirmation email sent (PaymentIntent metadata fallback)');
+              } else {
+                console.error('❌ Customer confirmation email failed (fallback):', customerEmailResult.error);
+              }
+            } catch (emailError) {
+              console.error('❌ Exception sending customer confirmation email (fallback):', emailError);
+            }
+
+            try {
+              const adminEmailResult = await sendAdminOrderNotificationEmail(orderEmailData);
+              if (adminEmailResult.success) {
+                console.log('✅ Admin notification email sent (PaymentIntent metadata fallback)');
+              } else {
+                console.error('❌ Admin notification email failed (fallback):', adminEmailResult.error);
+              }
+            } catch (adminEmailError) {
+              console.error('❌ Exception sending admin notification email (fallback):', adminEmailError);
+            }
+          } else {
+            console.error('❌ Cannot send fallback emails - no customer email in PaymentIntent metadata');
+          }
         }
 
         console.log('Payment succeeded:', paymentIntent.id);
@@ -478,7 +550,7 @@ export async function POST(request: NextRequest) {
       case 'payment_intent.payment_failed': {
         const paymentIntent = event.data.object;
         
-        const supabase = await createClient();
+        const supabase = createServiceClient();
         const { error } = await supabase
           .from('orders')
           .update({ 
